@@ -4,7 +4,7 @@
 		<title>Farm Game</title>
 	</head>
 	<body>
-		<form method="POST" action="farmer.php">
+		<form method="POST" action="farm.php">
 		<?php
 			$msg = '';
 			if( isset($_POST) && !empty($_POST) ){
@@ -38,7 +38,9 @@
 					$msg = '';
 					foreach( $arr as $val ){
 						if( $val == $value && isset($_POST['status'][$val]) && !empty($_POST['status'][$val]) && $_POST['status'][$val] == 'fed' ){
-							$msg = $val.' already fed';
+							//$msg = $val.' already fed';
+							$msg = $val.' fed';
+							$_POST[$val]++;
 						}elseif( $val == $value ){
 							$msg = $val.' fed';
 							$_POST[$val]++;
@@ -82,7 +84,7 @@
 						echo "You lost the game.";
 					}
 
-					echo "<br/><br/><a href='farmer.php'>click here</a> to start the game again";
+					echo "<br/><br/><a href='farm.php'>click here</a> to start the game again";
 
 				}
 
