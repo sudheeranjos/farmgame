@@ -66,7 +66,7 @@
 					$win = 0;
 					if( isset($_POST['status']) && !empty($_POST['status']) ){	
 						if( $_POST['status']['farmer1'] != 'dead'  ){
-							if( $_POST['status']['cow1'] == 'alive' || $_POST['status']['cow2'] != 'dead' ){
+							if( $_POST['status']['cow1'] != 'dead' || $_POST['status']['cow2'] != 'dead' ){
 								if( $_POST['status']['bunny1'] != 'dead' || $_POST['status']['bunny2'] != 'dead' || $_POST['status']['bunny3'] != 'dead' || $_POST['status']['bunny4'] != 'dead' ){
 									$win = 1;
 								}
