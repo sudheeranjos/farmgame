@@ -148,8 +148,6 @@
 												$status_str = 'alive';
 											}
 										}
-
-										//echo $key.'>>>>>'.$val.'>>>>>'.$chk.'>>>>>'.$status_str.'<br/>';
 										
 									}
 									
