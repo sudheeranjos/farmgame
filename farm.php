@@ -1,192 +1,174 @@
+<?php
+	session_start();
+?>
 <!DOCTYPE html>
 <html>
 	<head>
 		<title>Farm Game</title>
 	</head>
 	<body>
-		<form method="POST" action="farm.php">
 		<?php
-			$msg = '';
-			if( isset($_POST) && !empty($_POST) ){
-
-				//echo "<pre>"; print_r($_POST); echo "</pre>";
-				
-				$post_check = time();
-				
-				$arr = array('farmer1','cow1','cow2','bunny1','bunny2','bunny3','bunny4','total');
-				if( isset($_POST['feed']) && !empty($_POST['feed']) ){
-					
-					$check = array();				
-					$check_arr = array('farmer1','cow1','cow2','bunny1','bunny2','bunny3','bunny4');
-					foreach( $check_arr as $key=>$value ){
-						if( isset($_POST['status'][$value]) && !empty($_POST['status'][$value]) && $_POST['status'][$value] != 'dead' ){
-							$check[] = $value;
-						}
-					}
-					if( isset($check) && !empty($check) ){
-						$check = array_values($check);
-					}else{
-						$check = array('farmer1','cow1','cow2','bunny1','bunny2','bunny3','bunny4');
-					}
-					
-					$i = 0;
-					$cnt = count($check)-1;
-					$i = rand(0,$cnt);
-					shuffle($check);
-					$value = $check[$i];
-					
-					$msg = '';
-					foreach( $arr as $val ){
-						if( $val == $value && isset($_POST['status'][$val]) && !empty($_POST['status'][$val]) && $_POST['status'][$val] == 'fed' ){
-							//$msg = $val.' already fed';
-							$msg = $val.' fed';
-							$_POST[$val]++;
-						}elseif( $val == $value ){
-							$msg = $val.' fed';
-							$_POST[$val]++;
-						}elseif( $val == 'total' ){
-							$_POST[$val]++;
-						}
-						echo '<input type="hidden" name="'.$val.'" value="'.$_POST[$val].'" />';
-					}
-								
-				}else{
-					
-					foreach( $arr as $val ){
-						echo '<input type="hidden" name="'.$val.'" value="0" />';
-					}
-
-				}
 			
-				if(  !isset($_POST['total']) || ( ( isset($_POST['total']) && !empty($_POST['total']) && $_POST['total'] < 50 ) && ( !isset($_POST['status']['farmer1']) || ( isset($_POST['status']['farmer1']) && !empty($_POST['status']['farmer1']) &&  $_POST['status']['farmer1'] != 'dead' ) ) ) ){
-
-					echo '<input type="submit" name="feed" value="Feed" />';
-					if( !empty($msg) ){ echo '  ( '.$msg.' )'; }
-
-				}else{
-					
-					$win = 0;
-					if( isset($_POST['status']) && !empty($_POST['status']) ){	
-						if( $_POST['status']['farmer1'] != 'dead'  ){
-							if( $_POST['status']['cow1'] != 'dead' || $_POST['status']['cow2'] != 'dead' ){
-								if( $_POST['status']['bunny1'] != 'dead' || $_POST['status']['bunny2'] != 'dead' || $_POST['status']['bunny3'] != 'dead' || $_POST['status']['bunny4'] != 'dead' ){
-									$win = 1;
-								}
-							}
-						}						
+			// alive
+			$farm_arr = $alive_arr = array('farmer1','cow1','cow2','bunny1','bunny2','bunny3','bunny4');					
+			if( isset($_SESSION['dead']) && !empty($_SESSION['dead']) && is_array($_SESSION['dead']) ){
+				foreach( $alive_arr as $key=>$value ){
+					if( in_array($value,$_SESSION['dead']) ){
+						unset($alive_arr[$key]);
 					}
-					
-					echo "Game Over. ";
-
-					if( $win == 1 ){
-						echo "You won the game.";					
-					}else{
-						echo "You lost the game.";
-					}
-
-					echo "<br/><br/><a href='farm.php'>click here</a> to start the game again";
-
 				}
+				$alive_arr = array_values($alive_arr);
+			}
+			
+			// new game 
+			if( isset($_POST['start']) && !empty($_POST['start']) ){
+				session_destroy();
+				$filename = basename($_SERVER['PHP_SELF']);
+				header("location:".$filename);
+			}
 
-				if( isset($_POST['feed']) && !empty($_POST['feed']) ){
-		?>
-					<br/><br/>
+			if( isset($_POST['feed']) && isset($_POST['check']) && isset($_SESSION['check']) && $_POST['check'] == $_SESSION['check'] ){
+				
+				// total
+				if( !isset($_SESSION['total']) ){
+					$_SESSION['total'] = 1;
+				}else{
+					$_SESSION['total']++;
+				}			
+				
+				// random select
+				$i = 0;
+				$alive_cnt = count($alive_arr)-1;
+				//$i = rand(0,$alive_cnt);
+				shuffle($alive_arr);
+				$selected = $alive_arr[$i];
+				
+				// feed
+				foreach( $alive_arr as $value ){
+					
+					if( $value == $selected ){
+						if( !isset($_SESSION['count'][$value]) ){
+							$_SESSION['count'][$value] = 1;
+						}else{
+							$_SESSION['count'][$value]++;
+						}
+						$_SESSION['farm'][][$value] = 'fed';
+					}
 
-					<table border="1" cellspacing="0" cellpadding="5">
-						<tr>
-							<th>Entity</th>
-							<th>Feed</th>
-							<th>Status</th>
-							<th>Remarks</th>
-						</tr>
-						<?php
-							foreach( $_POST as $key => $val ){
-								if( !in_array($key,array('start','feed','status','post_check')) ){
-									
-									$status_str = 'alive';
-									if( isset($_POST['status'][$key]) and !empty($_POST['status'][$key]) ){
-										$status_str = $_POST['status'][$key];
-									}
-									
-									if( $status_str != 'dead' ){
-
-										$total = $_POST['total'];
-
-										// Farmer
-										$farmer_arr = array('farmer1');
-										if( in_array($key,$farmer_arr) ){
-											$chk = $total/15;
-											if( $total % 15 == 0 && $val < $chk ){
-												$status_str = 'dead';
-											}elseif( $val >= $chk ){
-												$status_str = 'fed';
-											}else{
-												$status_str = 'alive';
-											}
-										}
-
-										// Cow
-										$cow_arr = array('cow1','cow2');									
-										if( in_array($key,$cow_arr) ){
-											$chk = $total/10;
-											if( $total % 10 == 0 && $val < $chk ){
-												$status_str = 'dead';
-											}elseif( $val >= $chk ){
-												$status_str = 'fed';
-											}else{
-												$status_str = 'alive';
-											}
-										}
-
-										// Bunny
-										$bunny_arr = array('bunny1','bunny2','bunny3','bunny4');
-										if( in_array($key,$bunny_arr) ){
-											$chk = $total/8;
-											if( $total % 8 == 0 && $val < $chk ){
-												$status_str = 'dead';
-											}elseif( $val >= $chk ){
-												$status_str = 'fed';
-											}else{
-												$status_str = 'alive';
-											}
-										}
-										
-									}
-									
-									$remarks = '';
-									$status_display_str = $status_str;
-									if( $status_str == 'alive' ){
-										$remarks = 'unfed';
-										$status_display_str = 'alive';
-									}elseif( $status_str == 'fed' ){
-										$remarks = 'fed';
-										$status_display_str = 'alive';
-									}
-									
-									if( $key == 'total' ){
-										echo "<tr><td><b>Total</b></td><td>{$val}</td><td></td><td></td></tr>";
-									}else{
-										echo "<tr><td>{$key}</td><td>{$val}</td><td><input type='hidden' name='status[".$key."]' value='".$status_str."'/>".$status_display_str."</td><td>".$remarks."</td></tr>";
-									}
-								}
-							}
-						?>
-					</table>
-		<?php
+					$limit = 8; // bunny
+					if( $value == 'farmer1' ){
+						$limit = 15; // farmer
+					}elseif( in_array( $value, array('cow1','cow2') ) ){
+						$limit = 10; // cow
+					}
+					
+					$fed = 0;
+					if( isset($_SESSION['count'][$value]) && !empty($_SESSION['count'][$value]) ){
+						$fed = $_SESSION['count'][$value];
+					}
+					$total = $_SESSION['total'];
+					$min = $total / $limit;
+					
+					// dead
+					if( $total % $limit == 0 && $fed < $min ){
+						$_SESSION['dead'][] = $value;
+					}
+					
 				}
 				
-			}else{
-				unset($_POST);
-		?>		<input type="submit" name="start" value="Start a new game" />
+			}
+			
+			$msg = '';
+			$stop = 0;
+			if( isset($_SESSION['total']) && !empty($_SESSION['total']) && $_SESSION['total'] >= 50 ){
+				$stop = 1;
+				if( isset($alive_arr) && !empty($alive_arr) ){
+					$farmer = $cow = $bunny = 0;
+					foreach( $alive_arr as $alive ){
+						if( $alive == 'farmer1' ){
+							$farmer++;						
+						}if( strpos($alive,'cow') !== false ){
+							$cow++;						
+						}if( strpos($alive,'bunny') !== false ){
+							$bunny++;						
+						}
+					}
+					if( $farmer >= 1 && $cow >= 1 && $bunny >= 1 ){
+						$msg = 'You won the game.';
+					}else{
+						$msg = 'You lost the game. Atleast the farmer, 1 cow and 1 bunny should be alive.';
+					}
+				}
+			}elseif( isset($_SESSION['dead']) && !empty($_SESSION['dead']) && in_array('farmer1',$_SESSION['dead']) ){
+				$stop = 1;
+				$msg = 'You lost the game, farmer died.';
+			}
+			
+			$name = 'feed';
+			$type = 'submit';
+			$disabled = '';
+			if( $stop == 1 ){
+				$name = 'stop';
+				$type = 'button';
+				$disabled = 'disabled';
+			}
+			
+			$check = time();
+			$_SESSION['check'] = $check;
+			
+		?>
+
+		<form method="post" action="">
+			<input type="hidden" name="check" value="<?php echo $check; ?>" />
+			<input type="<?php echo $type; ?>" name="<?php echo $name; ?>" value="Feed" <?php echo $disabled; ?> />
+			<?php if( $stop == 1 ){ ?>
+				<input type="submit" name="start" value="Start a new game" />
+				<br/><br/> Game Over. <?php echo $msg; ?>
+			<?php } ?>
+		</form>
+		
+		<br/>
+
+		<?php
+			if( isset($_SESSION['farm']) && !empty($_SESSION['farm']) ){
+		?>
+			<table border="1" cellspacing="0" cellpadding="10">
+				<tr>
+					<th>Round</td>
+					<?php
+						foreach( $farm_arr as $header ){
+							$bgcolor = '';
+							if( isset($_SESSION['dead']) && !empty($_SESSION['dead']) && in_array($header,$_SESSION['dead']) ){
+								$bgcolor = 'bgcolor="red"';
+							}
+							echo "<th ".$bgcolor.">".ucfirst($header)."</th>";
+						}
+					?>
+				</tr>
+				<?php
+					foreach( $_SESSION['farm'] as $key => $value ){
+						echo "<tr>";
+						echo "<td>".($key+1)."</td>";
+						foreach( $farm_arr as $entity ){
+							if( isset($_SESSION['farm'][$key][$entity]) && !empty($_SESSION['farm'][$key][$entity]) ){
+								echo "<td>".$_SESSION['farm'][$key][$entity]."</td>";
+							}else{
+								echo "<td></td>";
+							}
+						}
+						echo "</tr>";
+					}				
+				?>
+			</table>
 		<?php
 			}
 		?>
-		</form>
+	
+		<?php
+			//echo "<pre>"; print_r($alive_arr); echo "</pre>";
+			//if( isset($_POST) ){ echo "<pre>"; print_r($_POST); echo "<pre/>"; }
+			//if( isset($_SESSION) ){ echo "<pre>"; print_r($_SESSION); echo "<pre/>"; }
+		?>
+
 	</body>
 </html>
-
-<script>
-	if ( window.history.replaceState ) {
-		window.history.replaceState( null, null, window.location.href );
-	}
-</script>
